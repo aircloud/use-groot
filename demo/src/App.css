@@ -1,0 +1,45 @@
+.App {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+  padding: 20px 25px;
+}
+
+.App button {
+  height: 30px;
+  font-size: 18px;
+  margin-right: 10px;
+}
+
+.part-app {
+  padding: 20px;
+  background: #4d4f51;
+}
+
+.part-sub-app-1 {
+  padding: 20px;
+  background: #484e54;
+}
+
+.part-sub-app-2 {
+  padding: 20px;
+  background: #3a434c;
+}
+
+.App-link {
+  color: #61dafb;
+}
+
+@keyframes App-logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
