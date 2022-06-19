@@ -1,6 +1,6 @@
 {
   "name": "use-groot",
-  "version": "0.0.1-alpha.1",
+  "version": "0.0.1-alpha.2",
   "description": "a react request hook",
   "main": "./lib/index.js",
   "scripts": {
@@ -9,7 +9,7 @@
     "coverage": "vitest run --coverage",
     "lint": "eslint . --ext .ts,.tsx --cache",
     "build": "tsc -p tsconfig.build.json",
-    "publish": "pnpm run build && npm publish"
+    "publish": "pnpm run build && npm publish ."
   },
   "lint-staged": {
     "*.{ts,tsx}": [
