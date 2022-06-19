@@ -1,13 +1,15 @@
 {
-  "name": "@aircloud/use-groot",
+  "name": "use-groot",
   "version": "0.0.1-alpha.1",
   "description": "a react request hook",
-  "main": "index.js",
+  "main": "./lib/index.js",
   "scripts": {
-    "test": "vitest",
+    "test:watch": "vitest",
+    "test": "vitest run",
     "coverage": "vitest run --coverage",
     "lint": "eslint . --ext .ts,.tsx --cache",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc -p tsconfig.build.json",
+    "publish": "pnpm run build && npm publish"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -47,6 +49,7 @@
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
+    "c8": "^7.11.3",
     "eslint": "8.15.0",
     "eslint-config-prettier": "8.5.0",
     "eslint-plugin-jest-dom": "4.0.1",

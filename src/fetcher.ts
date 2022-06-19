@@ -1,19 +1,22 @@
 import { CacheManager } from './cache';
-import { ObserverCallback, PromiseResult } from './schema';
+import { GrootFetcherManagerOptions, ObserverCallback, PromiseResult } from './schema';
 
-class FetcherInstance {
+export class GrootFetcherManager {
   promiseCache = new Map<string, Promise<any>>();
   observerMap = new Map<string, ObserverCallback[]>();
+  resultCacheLRU: CacheManager;
 
-  resultCacheLRU = new CacheManager({
-    size: 4,
-  });
+  constructor(options: GrootFetcherManagerOptions) {
+    this.resultCacheLRU = new CacheManager({
+      size: options.cacheSize,
+    });
+  }
 
-  fetch<TData, TParams extends any[]>(
+  fetch<TData, TParams extends any[], TError>(
     cacheKey: string,
     fetcher: (...args: any) => Promise<any>,
     params: TParams | undefined,
-    callback: (data: PromiseResult<TData>) => void,
+    callback: (data: PromiseResult<TData, TError>) => void,
   ) {
     if (this.resultCacheLRU.cache.has(cacheKey)) {
       console.log(
@@ -32,7 +35,7 @@ class FetcherInstance {
           const res = {
             type: 'success',
             data: value as unknown as TData,
-          } as PromiseResult<TData>;
+          } as PromiseResult<TData, TError>;
           callback(res);
           console.log(`before invoke observer for ${cacheKey}, res:`, res);
           this.invokeObserver(cacheKey, res);
@@ -41,7 +44,7 @@ class FetcherInstance {
           const res = {
             type: 'error',
             error: e,
-          } as PromiseResult<TData>;
+          } as PromiseResult<TData, TError>;
           callback(res);
           console.log(`before invoke observer for ${cacheKey}, res:`, res);
           this.invokeObserver(cacheKey, res);
@@ -59,7 +62,7 @@ class FetcherInstance {
         const res = {
           type: 'success',
           data: data as unknown as TData,
-        } as PromiseResult<TData>;
+        } as PromiseResult<TData, TError>;
         this.resultCacheLRU.cache.set(cacheKey, res);
         callback(res);
         this.invokeObserver(cacheKey, res);
@@ -69,8 +72,9 @@ class FetcherInstance {
         const res = {
           type: 'error',
           error: e,
-        } as PromiseResult<TData>;
+        } as PromiseResult<TData, TError>;
         callback(res);
+        this.invokeObserver(cacheKey, res);
       });
   }
 
@@ -102,7 +106,7 @@ class FetcherInstance {
     this.observerMap.set(cacheKey, observerList);
   };
 
-  invokeObserver = (cacheKey: string, result: PromiseResult<unknown>) => {
+  invokeObserver = (cacheKey: string, result: PromiseResult<unknown, unknown>) => {
     if (!this.observerMap.get(cacheKey)) return;
     const observerList = this.observerMap.get(cacheKey)!;
 
@@ -132,5 +136,20 @@ class FetcherCounter {
   };
 }
 
-export const GlobalFetcherInstance = new FetcherInstance();
+class FunctionCacheKeyManager {
+  cacheKeyMap = new Map<Function, number>();
+  getId = (func: Function) => {
+    if (this.cacheKeyMap.has(func)) {
+      return this.cacheKeyMap.get(func);
+    }
+    const nextIndex = this.cacheKeyMap.size + 1;
+    this.cacheKeyMap.set(func, nextIndex);
+    return nextIndex;
+  };
+}
+
+export const GlobalFetcherManager = new GrootFetcherManager({
+  cacheSize: 20,
+});
 export const GlobalFetcherCounter = new FetcherCounter();
+export const GlobalFetcherKeyManager = new FunctionCacheKeyManager();

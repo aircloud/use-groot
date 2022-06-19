@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
 import './App.css';
 import { useGroot } from '../../src/index';
-import { fetcherXXX, SubApp } from './SubApp';
+import { fetcher, SubApp } from './SubApp';
 
 function App() {
   const { data, status, req, refresh } = useGroot({
-    fetcher: fetcherXXX,
+    fetcher: fetcher,
     cacheKey: (params: string) => `cache_key_${params}`,
     auto: false,
   });

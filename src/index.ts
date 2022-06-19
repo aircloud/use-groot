@@ -1,7 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { v4 as uuidV4 } from 'uuid';
-import { GlobalFetcherCounter, GlobalFetcherInstance } from './fetcher';
-import { GrootOptions, GrootStatus, PromiseResult } from './schema';
+import {
+  GlobalFetcherCounter,
+  GlobalFetcherKeyManager,
+  GlobalFetcherManager,
+  GrootFetcherManager,
+} from './fetcher';
+import { Fetcher, GrootStatus, PromiseResult } from './schema';
 export { GrootStatus } from './schema';
 
 const useUpdate = () => {
@@ -9,11 +14,33 @@ const useUpdate = () => {
   return useCallback(() => setState({}), []);
 };
 
+export interface GrootOptions<TData, TParams extends any[], TError> {
+  fetcher: Fetcher<TData, TParams>;
+  cacheKey?: string | ((...args: TParams) => string);
+  auto: boolean;
+  params?: TParams;
+  swr?: boolean;
+  errorCallback?: (error: TError) => void;
+  fetcherManager?: GrootFetcherManager;
+}
+
+const useRefState = <T>(initValue: T): [T, { current: T }, (value: T) => void] => {
+  const [value, setValue] = useState(initValue);
+  const valueRef = useRef(value);
+  const updateValue = (nextValue: T) => {
+    setValue(nextValue);
+    valueRef.current = nextValue;
+  };
+  return [value, valueRef, updateValue];
+};
+
 export function useGroot<TData, TParams extends any[], TError = any>(
   options: GrootOptions<TData, TParams, TError>,
 ) {
-  const [data, setData] = useState<TData | undefined>(undefined);
-  const dataRef = useRef<TData | undefined>(data);
+  // For stability reasons, users are not expected to change the fetcherManager
+  const [fetcherManager] = useState(options.fetcherManager || GlobalFetcherManager);
+  const [error, setError] = useState<TError | undefined>(undefined);
+  const [data, dataRef, updateData] = useRefState<TData | undefined>(undefined);
   const [status, setStatus] = useState<GrootStatus>(GrootStatus.init);
   const [uuid] = useState(uuidV4());
   const [currentParams, setCurrentParams] = useState(options.params);
@@ -28,69 +55,82 @@ export function useGroot<TData, TParams extends any[], TError = any>(
 
     const usingParams = params || currentParams || ([] as unknown[] as TParams);
     const usingCacheKey =
-      typeof options.cacheKey == 'function'
-        ? options.cacheKey(...usingParams)
-        : (options.cacheKey as string);
+      'cacheKey' in options
+        ? typeof options.cacheKey == 'function'
+          ? options.cacheKey(...usingParams)
+          : (options.cacheKey as string)
+        : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${JSON.stringify(usingParams)}`;
 
     console.error('usingCacheKey:', usingCacheKey);
 
     if (!options.swr) {
-      setData(undefined);
-      dataRef.current = undefined;
+      updateData(undefined);
     }
     setStatus(GrootStatus.pending);
     setCurrentParams(usingParams);
     setCurrentCacheKey(usingCacheKey);
 
-    GlobalFetcherInstance.fetch(usingCacheKey, options.fetcher, usingParams, (response) => {
-      console.log('get response:', response, GlobalFetcherCounter.get(uuid));
+    fetcherManager.fetch(
+      usingCacheKey,
+      options.fetcher,
+      usingParams,
+      (response: PromiseResult<TData, TError>) => {
+        console.log('get response:', response, GlobalFetcherCounter.get(uuid));
 
-      if (GlobalFetcherCounter.get(uuid) !== count) {
-        console.warn(`---> counter not equal, just return`);
-        return;
-      }
+        if (GlobalFetcherCounter.get(uuid) !== count) {
+          console.warn(`---> counter not equal, just return`);
+          return;
+        }
 
-      if (response.type === 'success') {
-        setData(response.data! as TData);
-        dataRef.current = response.data! as TData;
-        setStatus(GrootStatus.success);
-      } else {
-        setStatus(GrootStatus.error);
-        // TODO: maybe error callback
-      }
-    });
+        if (response.type === 'success') {
+          updateData(response.data!);
+          setError(undefined);
+          setStatus(GrootStatus.success);
+        } else {
+          setStatus(GrootStatus.error);
+          updateData(undefined);
+          setError(response.error);
+          setStatus(GrootStatus.error);
+
+          if (options.errorCallback) {
+            options.errorCallback(response.error!);
+          }
+        }
+      },
+    );
   };
 
   useEffect(() => {
     console.log('currentCacheKey change to:', currentCacheKey);
-
     if (!currentCacheKey) return;
 
-    const callback = (response: PromiseResult<TData>) => {
+    const callback = (response: PromiseResult<TData, TError>) => {
       console.log(`this is a callback for ${currentCacheKey} and get value value:`, response);
 
       if (response.type === 'success') {
         if (response.data === dataRef.current) {
           console.log('data is same, skip!!!!');
         }
-        setData(response.data! as TData);
-        dataRef.current = response.data! as TData;
+        updateData(response.data! as TData);
         setStatus(GrootStatus.success);
       } else {
         setStatus(GrootStatus.error);
+        updateData(undefined);
+        setError(response.error!);
+
         if (options.errorCallback) {
-          options.errorCallback(response.error);
+          options.errorCallback(response.error!);
         }
         // TODO: maybe error callback
       }
     };
 
-    GlobalFetcherInstance.addObserver(currentCacheKey, callback);
+    fetcherManager.addObserver(currentCacheKey, callback);
 
     return () => {
-      GlobalFetcherInstance.removeObserver(currentCacheKey, callback);
+      fetcherManager.removeObserver(currentCacheKey, callback);
     };
-  }, [currentCacheKey, options]);
+  }, [currentCacheKey, dataRef, fetcherManager, options, updateData]);
 
   const refresh = (params?: TParams) => {
     if (!currentCacheKey) {
@@ -99,7 +139,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
     }
 
     console.log('refresh currentCacheKey:', currentCacheKey);
-    GlobalFetcherInstance.clearCache(currentCacheKey);
+    fetcherManager.clearCache(currentCacheKey);
     req(params);
   };
 
@@ -116,6 +156,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
 
   return {
     data,
+    error,
     status,
     req,
     refresh,
