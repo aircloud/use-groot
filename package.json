@@ -39,12 +39,14 @@
   },
   "homepage": "https://github.com/aircloud/use-groot#readme",
   "dependencies": {
+    "json-stable-stringify": "^1.0.1",
     "lru-cache": "^7.10.1",
     "react": "^18.2.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
     "@testing-library/react": "^13.3.0",
+    "@types/json-stable-stringify": "^1.0.34",
     "@types/react": "^18.0.12",
     "@types/uuid": "^8.3.4",
     "@typescript-eslint/eslint-plugin": "^5.28.0",

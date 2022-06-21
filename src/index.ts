@@ -8,6 +8,7 @@ import {
 } from './fetcher';
 import { Fetcher, GrootStatus, PromiseResult } from './schema';
 export { GrootStatus } from './schema';
+import stringify from 'json-stable-stringify';
 
 // const useUpdate = () => {
 //   const [, setState] = useState({});
@@ -46,12 +47,9 @@ export function useGroot<TData, TParams extends any[], TError = any>(
   const [_currentParams, currentParamsRef, updateCurrentParams] = useRefState(options.params);
   const [currentCacheKey, setCurrentCacheKey] = useState<string | null>(null);
 
-  console.log('uuid:', uuid);
-
   const reqImpl = useCallback(
     (params?: TParams, refresh?: boolean) => {
       const count = GlobalFetcherCounter.increase(uuid);
-      console.log('count:', count);
 
       const usingParams = params || currentParamsRef.current || ([] as unknown[] as TParams);
       const usingCacheKey =
@@ -59,7 +57,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
           ? typeof options.cacheKey == 'function'
             ? options.cacheKey(...usingParams)
             : (options.cacheKey as string)
-          : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${JSON.stringify(usingParams)}`;
+          : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${stringify(usingParams)}`;
 
       console.error('usingCacheKey:', usingCacheKey);
 
@@ -75,10 +73,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
         options.fetcher,
         usingParams,
         (response: PromiseResult<TData, TError>) => {
-          console.log('get response:', response, GlobalFetcherCounter.get(uuid));
-
           if (GlobalFetcherCounter.get(uuid) !== count) {
-            console.warn(`---> counter not equal, just return`);
             return;
           }
 
@@ -112,21 +107,18 @@ export function useGroot<TData, TParams extends any[], TError = any>(
       return;
     }
 
-    console.log('refresh currentCacheKey:', currentCacheKey);
     fetcherManager.clearCache(currentCacheKey);
     reqImpl(params, true);
   };
 
   useEffect(() => {
-    console.log('currentCacheKey change to:', currentCacheKey);
     if (!currentCacheKey) return;
 
     const callback = (response: PromiseResult<TData, TError>) => {
-      console.log(`this is a callback for ${currentCacheKey} and get value value:`, response);
-
       if (response.type === 'success') {
         if (response.data === dataRef.current) {
-          console.log('data is same, skip!!!!');
+          // hint: Deep copy can be considered, but for now, let the user do this
+          return;
         }
         updateData(response.data! as TData);
         setStatus(GrootStatus.success);
@@ -151,7 +143,6 @@ export function useGroot<TData, TParams extends any[], TError = any>(
 
   useEffect(() => {
     if (options.auto) {
-      console.log('useGroot req auto');
       req();
     }
     return () => {

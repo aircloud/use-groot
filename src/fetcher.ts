@@ -19,16 +19,11 @@ export class GrootFetcherManager {
     callback: (data: PromiseResult<TData, TError>) => void,
   ) {
     if (this.resultCacheLRU.cache.has(cacheKey)) {
-      console.log(
-        `[xxx] fetcherInstance result cache for cacheKey: ${cacheKey} is`,
-        this.resultCacheLRU.cache.get(cacheKey),
-      );
       callback(this.resultCacheLRU.cache.get(cacheKey)!);
       return;
     }
 
     if (this.promiseCache.has(cacheKey)) {
-      console.log(`[xxx] fetcherInstance promise cache for cacheKey: ${cacheKey}`);
       this.promiseCache
         .get(cacheKey)!
         .then((value: any) => {
@@ -37,7 +32,6 @@ export class GrootFetcherManager {
             data: value as unknown as TData,
           } as PromiseResult<TData, TError>;
           callback(res);
-          console.log(`before invoke observer for ${cacheKey}, res:`, res);
           this.invokeObserver(cacheKey, res);
         })
         .catch((e) => {
@@ -46,7 +40,6 @@ export class GrootFetcherManager {
             error: e,
           } as PromiseResult<TData, TError>;
           callback(res);
-          console.log(`before invoke observer for ${cacheKey}, res:`, res);
           this.invokeObserver(cacheKey, res);
         });
       return;
@@ -93,7 +86,7 @@ export class GrootFetcherManager {
   removeObserver = (cacheKey: string, observer: ObserverCallback) => {
     const observerList = this.observerMap.get(cacheKey);
     if (!observerList) {
-      // error handler
+      // maybe error handler
       return;
     }
     observerList.splice(observerList.indexOf(observer), 1);
@@ -109,8 +102,6 @@ export class GrootFetcherManager {
   invokeObserver = (cacheKey: string, result: PromiseResult<unknown, unknown>) => {
     if (!this.observerMap.get(cacheKey)) return;
     const observerList = this.observerMap.get(cacheKey)!;
-
-    console.log(`---> invokeObserver cacheKey: ${cacheKey} observerList`, observerList);
     for (const observer of observerList) {
       observer(result);
     }

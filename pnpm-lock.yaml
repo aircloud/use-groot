@@ -2,6 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@testing-library/react': ^13.3.0
+  '@types/json-stable-stringify': ^1.0.34
   '@types/react': ^18.0.12
   '@types/uuid': ^8.3.4
   '@typescript-eslint/eslint-plugin': ^5.28.0
@@ -15,6 +16,7 @@ specifiers:
   eslint-plugin-testing-library: 5.5.0
   happy-dom: ^5.3.1
   husky: 2.4.1
+  json-stable-stringify: ^1.0.1
   lint-staged: 8.2.1
   lru-cache: ^7.10.1
   prettier: 2.6.2
@@ -26,12 +28,14 @@ specifiers:
   vitest: ^0.15.1
 
 dependencies:
+  json-stable-stringify: 1.0.1
   lru-cache: 7.10.1
   react: 18.2.0
   uuid: 8.3.2
 
 devDependencies:
   '@testing-library/react': 13.3.0_biqbaboplfbrettd7655fr4n2y
+  '@types/json-stable-stringify': 1.0.34
   '@types/react': 18.0.12
   '@types/uuid': 8.3.4
   '@typescript-eslint/eslint-plugin': 5.28.0_ljv32wvcifh7xwz6n3t4emczba
@@ -238,6 +242,10 @@ packages:
 
   /@types/json-schema/7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
+    dev: true
+
+  /@types/json-stable-stringify/1.0.34:
+    resolution: {integrity: sha512-s2cfwagOQAS8o06TcwKfr9Wx11dNGbH2E9vJz1cqV+a/LOyhWNLUNd6JSRYNzvB4d29UuJX2M0Dj9vE1T8fRXw==}
     dev: true
 
   /@types/node/10.17.60:
@@ -2455,6 +2463,16 @@ packages:
   /json-stable-stringify-without-jsonify/1.0.1:
     resolution: {integrity: sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw==}
     dev: true
+
+  /json-stable-stringify/1.0.1:
+    resolution: {integrity: sha512-i/J297TW6xyj7sDFa7AmBPkQvLIxWr2kKPWI26tXydnZrzVAocNqn5DMNT1Mzk0vit1V5UkRM7C1KdVNp7Lmcg==}
+    dependencies:
+      jsonify: 0.0.0
+    dev: false
+
+  /jsonify/0.0.0:
+    resolution: {integrity: sha512-trvBk1ki43VZptdBI5rIlG4YOzyeH/WefQt5rj1grasPn4iiZWKet8nkgc4GlsAylaztn0qZfUYOiTsASJFdNA==}
+    dev: false
 
   /jsx-ast-utils/3.3.0:
     resolution: {integrity: sha512-XzO9luP6L0xkxwhIJMTJQpZo/eeN60K08jHdexfD569AGxeNug6UketeHXEhROoM8aR7EcUoOQmIhcJQjcuq8Q==}

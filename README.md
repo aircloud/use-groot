@@ -26,6 +26,12 @@ const { data, status, req, refresh } = useGroot({
 });
 ```
 
+参数说明
+
+```
+cacheKey：如果不传递，会直接通过参数序列化来标志
+```
+
 ## 开发背景
 
 最初，笔者的一个 React 项目面临的一个问题是：
