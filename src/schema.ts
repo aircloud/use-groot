@@ -13,6 +13,7 @@ export enum GrootStatus {
   'pending' = 'pending',
   'success' = 'success',
   'error' = 'error',
+  'refreshing' = 'refreshing',
 }
 
 export interface GrootResponse<TData, TParams> {

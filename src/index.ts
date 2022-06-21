@@ -9,10 +9,10 @@ import {
 import { Fetcher, GrootStatus, PromiseResult } from './schema';
 export { GrootStatus } from './schema';
 
-const useUpdate = () => {
-  const [, setState] = useState({});
-  return useCallback(() => setState({}), []);
-};
+// const useUpdate = () => {
+//   const [, setState] = useState({});
+//   return useCallback(() => setState({}), []);
+// };
 
 export interface GrootOptions<TData, TParams extends any[], TError> {
   fetcher: Fetcher<TData, TParams>;
@@ -43,61 +43,78 @@ export function useGroot<TData, TParams extends any[], TError = any>(
   const [data, dataRef, updateData] = useRefState<TData | undefined>(undefined);
   const [status, setStatus] = useState<GrootStatus>(GrootStatus.init);
   const [uuid] = useState(uuidV4());
-  const [currentParams, setCurrentParams] = useState(options.params);
-  const update = useUpdate();
+  const [_currentParams, currentParamsRef, updateCurrentParams] = useRefState(options.params);
   const [currentCacheKey, setCurrentCacheKey] = useState<string | null>(null);
 
   console.log('uuid:', uuid);
 
-  const req = (params?: TParams) => {
-    const count = GlobalFetcherCounter.increase(uuid);
-    console.log('count:', count);
+  const reqImpl = useCallback(
+    (params?: TParams, refresh?: boolean) => {
+      const count = GlobalFetcherCounter.increase(uuid);
+      console.log('count:', count);
 
-    const usingParams = params || currentParams || ([] as unknown[] as TParams);
-    const usingCacheKey =
-      'cacheKey' in options
-        ? typeof options.cacheKey == 'function'
-          ? options.cacheKey(...usingParams)
-          : (options.cacheKey as string)
-        : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${JSON.stringify(usingParams)}`;
+      const usingParams = params || currentParamsRef.current || ([] as unknown[] as TParams);
+      const usingCacheKey =
+        'cacheKey' in options
+          ? typeof options.cacheKey == 'function'
+            ? options.cacheKey(...usingParams)
+            : (options.cacheKey as string)
+          : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${JSON.stringify(usingParams)}`;
 
-    console.error('usingCacheKey:', usingCacheKey);
+      console.error('usingCacheKey:', usingCacheKey);
 
-    if (!options.swr) {
-      updateData(undefined);
-    }
-    setStatus(GrootStatus.pending);
-    setCurrentParams(usingParams);
-    setCurrentCacheKey(usingCacheKey);
+      if (!options.swr) {
+        updateData(undefined);
+      }
+      setStatus(refresh ? GrootStatus.refreshing : GrootStatus.pending);
+      updateCurrentParams(usingParams);
+      setCurrentCacheKey(usingCacheKey);
 
-    fetcherManager.fetch(
-      usingCacheKey,
-      options.fetcher,
-      usingParams,
-      (response: PromiseResult<TData, TError>) => {
-        console.log('get response:', response, GlobalFetcherCounter.get(uuid));
+      fetcherManager.fetch(
+        usingCacheKey,
+        options.fetcher,
+        usingParams,
+        (response: PromiseResult<TData, TError>) => {
+          console.log('get response:', response, GlobalFetcherCounter.get(uuid));
 
-        if (GlobalFetcherCounter.get(uuid) !== count) {
-          console.warn(`---> counter not equal, just return`);
-          return;
-        }
-
-        if (response.type === 'success') {
-          updateData(response.data!);
-          setError(undefined);
-          setStatus(GrootStatus.success);
-        } else {
-          setStatus(GrootStatus.error);
-          updateData(undefined);
-          setError(response.error);
-          setStatus(GrootStatus.error);
-
-          if (options.errorCallback) {
-            options.errorCallback(response.error!);
+          if (GlobalFetcherCounter.get(uuid) !== count) {
+            console.warn(`---> counter not equal, just return`);
+            return;
           }
-        }
-      },
-    );
+
+          if (response.type === 'success') {
+            updateData(response.data!);
+            setError(undefined);
+            setStatus(GrootStatus.success);
+          } else {
+            setStatus(GrootStatus.error);
+            updateData(undefined);
+            setError(response.error);
+            setStatus(GrootStatus.error);
+
+            if (options.errorCallback) {
+              options.errorCallback(response.error!);
+            }
+          }
+        },
+      );
+    },
+    [currentParamsRef, fetcherManager, options, updateCurrentParams, updateData, uuid],
+  );
+
+  const req = (params?: TParams) => {
+    return reqImpl(params);
+  };
+
+  const refresh = (params?: TParams) => {
+    if (!currentCacheKey) {
+      console.error('no currentCacheKey');
+      return;
+    }
+
+    console.log('refresh currentCacheKey:', currentCacheKey);
+    fetcherManager.clearCache(currentCacheKey);
+    reqImpl(params, true);
   };
 
   useEffect(() => {
@@ -131,17 +148,6 @@ export function useGroot<TData, TParams extends any[], TError = any>(
       fetcherManager.removeObserver(currentCacheKey, callback);
     };
   }, [currentCacheKey, dataRef, fetcherManager, options, updateData]);
-
-  const refresh = (params?: TParams) => {
-    if (!currentCacheKey) {
-      console.error('no currentCacheKey');
-      return;
-    }
-
-    console.log('refresh currentCacheKey:', currentCacheKey);
-    fetcherManager.clearCache(currentCacheKey);
-    req(params);
-  };
 
   useEffect(() => {
     if (options.auto) {
