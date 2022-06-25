@@ -7,8 +7,9 @@ import {
   GrootFetcherManager,
 } from './fetcher';
 import { Fetcher, GrootStatus, PromiseResult } from './schema';
-export { GrootStatus } from './schema';
 import stringify from 'json-stable-stringify';
+
+export { GrootStatus } from './schema';
 
 export interface GrootOptions<TData, TParams extends any[], TError> {
   fetcher: Fetcher<TData, TParams>;
