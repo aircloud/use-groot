@@ -1,16 +1,16 @@
 # use-groot
 
-这是一个尚在开发中的基于 React Hooks 的请求管理库，目前还正在完善，如果你需要一个完善额库，可能 [swr](https://github.com/vercel/swr)、[use-request](https://ahooks.js.org/hooks/use-request/index) 或者 [react-query](https://react-query.tanstack.com/) 是你更好的选择。
+这是一个简单专注的 React Hooks 的请求管理库，目前已经生产环境可用。
 
-不过相比之下，该库的目的在于：
+不过你在使用之前，也可以尝试了解 [swr](https://github.com/vercel/swr)、[use-request](https://ahooks.js.org/hooks/use-request/index) 或者 [react-query](https://react-query.tanstack.com/)。
 
-- 只专注处理缓存和状态一致性问题，没有预设的额外请求。
+相比于以上提供的例子，该库的目的在于：
+
+- 只专注处理缓存和状态一致性问题，没有预设的额外请求，使用的心智负担很低。
 - 支持动态 cacheKey，并且支持自定义缓存策略，尽可能地将缓存过程白盒化。
 - 基于状态机流转思维开发。
 
 ## 使用
-
-> 由于目前正在测试阶段，该库的发布版本会携带大量的 console 等内容，近期该库会发布更加稳定的版本
 
 ```
 pnpm add use-groot
@@ -26,10 +26,42 @@ const { data, status, req, refresh } = useGroot({
 });
 ```
 
-参数说明
+参数说明：
 
+```typescript
+export interface GrootOptions<TData, TParams extends any[], TError> {
+  // 一个返回 Promise 的数据获取函数
+  fetcher: Fetcher<TData, TParams>;
+  // 相同的 cacheKey 的请求会被复用，可以直接传递一个字符串，或者一个接收参数的函数。如果不传递，会直接通过参数序列化来标志
+  cacheKey?: string | ((...args: TParams) => string);
+  // 是否在定义 Hook 的时候自动获取一次数据
+  auto: boolean;
+  // 参数，如果不需要自动获取数据或者不需要参数，可以不填
+  params?: TParams;
+  // 是否开启 SWR （“SWR” 这个名字来自于 stale-while-revalidate：一种由 HTTP RFC 5861 推广的 HTTP 缓存失效策略。这种策略首先从缓存中返回数据（过期的），同时发送 fetch 请求（重新验证），最后得到最新数据。）
+  swr?: boolean;
+  // 错误回调函数，可以用于打日志
+  errorCallback?: (error: TError) => void;
+  // 自定义的请求管理库，一般不需要传递
+  fetcherManager?: GrootFetcherManager;
+}
 ```
-cacheKey：如果不传递，会直接通过参数序列化来标志
+
+返回值说明：
+
+```typescript
+export interface GrootResponse<TData, TParams extends any[], TError> {
+  // 响应数据
+  data: TData | undefined;
+  // 返回的错误
+  error: TError | undefined;
+  // 响应的状态，有 init、pending、success、error、refreshing 五种
+  status: GrootStatus;
+  // 请求函数，如果有缓存会直接使用
+  req: (...params: TParams | []) => void;
+  // 刷新函数，不使用缓存，并且会同时更新其他依赖此缓存的组件
+  refresh: (...params: TParams | []) => void;
+}
 ```
 
 ## 开发背景

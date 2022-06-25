@@ -28,7 +28,7 @@ describe('delayed execution', () => {
     );
 
     expect(view.result.current.data).toBe(undefined);
-    view.result.current.req(['hello_world', 1]);
+    view.result.current.req('hello_world', 1);
     view.rerender();
 
     await act(() => sleep(1200));
@@ -54,15 +54,15 @@ describe('delayed execution', () => {
 
     expect(hook1.current.data).toBe(undefined);
 
-    hook1.current.req(['hello_world', 1]);
-    hook2.current.req(['hello_world', 1]);
+    hook1.current.req('hello_world', 1);
+    hook2.current.req('hello_world', 1);
 
     await act(() => sleep(1200));
 
     expect(hook1.current.data?.value).toBe('test_hello_world_1');
     expect(hook2.current.data?.value).toBe('test_hello_world_1');
 
-    hook1.current.refresh(['hello_world', 2]);
+    hook1.current.refresh('hello_world', 2);
 
     await act(() => sleep(1200));
 
@@ -96,15 +96,15 @@ describe('delayed execution', () => {
 
     expect(hook1.current.data).toBe(undefined);
 
-    hook1.current.req(['hello_world']);
-    hook2.current.req(['hello_world']);
+    hook1.current.req('hello_world');
+    hook2.current.req('hello_world');
 
     await act(() => sleep(120));
 
     expect(hook1.current.data?.value).toBe('test_hello_world_0');
     expect(hook2.current.data?.value).toBe('test_hello_world_0');
 
-    hook1.current.refresh(['hello_world']);
+    hook1.current.refresh('hello_world');
 
     await act(() => sleep(120));
 
@@ -139,8 +139,8 @@ describe('delayed execution', () => {
 
     expect(hook1.current.data).toBe(undefined);
 
-    hook1.current.req(['hello_world']);
-    hook2.current.req(['hello_world']);
+    hook1.current.req('hello_world');
+    hook2.current.req('hello_world');
 
     await act(() => sleep(200));
 

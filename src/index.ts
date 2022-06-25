@@ -10,11 +10,6 @@ import { Fetcher, GrootStatus, PromiseResult } from './schema';
 export { GrootStatus } from './schema';
 import stringify from 'json-stable-stringify';
 
-// const useUpdate = () => {
-//   const [, setState] = useState({});
-//   return useCallback(() => setState({}), []);
-// };
-
 export interface GrootOptions<TData, TParams extends any[], TError> {
   fetcher: Fetcher<TData, TParams>;
   cacheKey?: string | ((...args: TParams) => string);
@@ -23,6 +18,14 @@ export interface GrootOptions<TData, TParams extends any[], TError> {
   swr?: boolean;
   errorCallback?: (error: TError) => void;
   fetcherManager?: GrootFetcherManager;
+}
+
+export interface GrootResponse<TData, TParams extends any[], TError> {
+  data: TData | undefined;
+  error: TError | undefined;
+  status: GrootStatus;
+  req: (...params: TParams | []) => void;
+  refresh: (...params: TParams | []) => void;
 }
 
 const useRefState = <T>(initValue: T): [T, { current: T }, (value: T) => void] => {
@@ -37,7 +40,7 @@ const useRefState = <T>(initValue: T): [T, { current: T }, (value: T) => void] =
 
 export function useGroot<TData, TParams extends any[], TError = any>(
   options: GrootOptions<TData, TParams, TError>,
-) {
+): GrootResponse<TData, TParams, TError> {
   // For stability reasons, users are not expected to change the fetcherManager
   const [fetcherManager] = useState(options.fetcherManager || GlobalFetcherManager);
   const [error, setError] = useState<TError | undefined>(undefined);
@@ -58,8 +61,6 @@ export function useGroot<TData, TParams extends any[], TError = any>(
             ? options.cacheKey(...usingParams)
             : (options.cacheKey as string)
           : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${stringify(usingParams)}`;
-
-      console.error('usingCacheKey:', usingCacheKey);
 
       if (!options.swr) {
         updateData(undefined);
@@ -97,18 +98,18 @@ export function useGroot<TData, TParams extends any[], TError = any>(
     [currentParamsRef, fetcherManager, options, updateCurrentParams, updateData, uuid],
   );
 
-  const req = (params?: TParams) => {
-    return reqImpl(params);
+  const req = (...params: TParams | []) => {
+    return reqImpl(params.length ? (params as TParams) : undefined);
   };
 
-  const refresh = (params?: TParams) => {
+  const refresh = (...params: TParams | []) => {
     if (!currentCacheKey) {
-      console.error('no currentCacheKey');
+      console.error('[use-groot] error: cacheKey not found');
       return;
     }
 
     fetcherManager.clearCache(currentCacheKey);
-    reqImpl(params, true);
+    reqImpl(params.length ? (params as TParams) : undefined, true);
   };
 
   useEffect(() => {

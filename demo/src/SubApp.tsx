@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useGroot } from '../../src/index';
 
-export async function fetcher(param: string): Promise<{ value: string }> {
+export async function fetcher(param: string, key: string): Promise<{ value: string }> {
   return new Promise((rs, rj) => {
     setTimeout(() => {
       rs({ value: `res_for_${param}_${Date.now()}` });
@@ -17,7 +17,7 @@ export const SubApp = () => {
   });
 
   useEffect(() => {
-    req(['hello_world']);
+    req('hello_world', 'key');
   }, [req]);
 
   return (

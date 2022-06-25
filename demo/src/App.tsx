@@ -6,12 +6,13 @@ import { fetcher, SubApp } from './SubApp';
 function App() {
   const { data, status, req, refresh } = useGroot({
     fetcher: fetcher,
-    cacheKey: (params: string) => `cache_key_${params}`,
+    cacheKey: (params: string, key: string) => `cache_key_${params}`,
     auto: false,
   });
 
   useEffect(() => {
-    req(['hello_world']);
+    req('hello_world', 'key');
+    req();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -23,7 +24,7 @@ function App() {
         <button
           onClick={() => {
             console.log('click logo req!');
-            req(['hello_world']);
+            req('hello_world', 'key');
           }}
           style={{ cursor: 'pointer' }}
         >
