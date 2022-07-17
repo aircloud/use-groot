@@ -71,7 +71,8 @@ export class GrootFetcherManager {
       });
   }
 
-  clearCache = (cacheKey: string) => {
+  clearCache = (cacheKey: string | null) => {
+    if (!cacheKey) return;
     this.resultCacheLRU.cache.delete(cacheKey);
   };
 

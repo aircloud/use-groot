@@ -159,4 +159,23 @@ describe('delayed execution', () => {
     expect(hook1.current.status).toBe(GrootStatus.success);
     expect(hook2.current.status).toBe(GrootStatus.success);
   });
+  it('refresh test', async () => {
+    function fetchReturnError(param: string): Promise<{ value: string }> {
+      return new Promise((rs, rj) => {
+        rs({ value: 'success' });
+      });
+    }
+
+    const { result: hook1 } = renderHook(() =>
+      useGroot({
+        fetcher: fetchReturnError,
+        auto: false,
+      }),
+    );
+
+    hook1.current.refresh();
+    await act(() => sleep(200));
+
+    expect(hook1.current.data?.value).toBe('success');
+  });
 });

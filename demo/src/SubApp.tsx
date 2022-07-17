@@ -18,7 +18,8 @@ export const SubApp = () => {
 
   useEffect(() => {
     req('hello_world', 'key');
-  }, [req]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div>

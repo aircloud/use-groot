@@ -99,19 +99,20 @@ export function useGroot<TData, TParams extends any[], TError = any>(
     [currentParamsRef, fetcherManager, options, updateCurrentParams, updateData, uuid],
   );
 
-  const req = (...params: TParams | []) => {
-    return reqImpl(params.length ? (params as TParams) : undefined);
-  };
+  const req = useCallback(
+    (...params: TParams | []) => {
+      return reqImpl(params.length ? (params as TParams) : undefined);
+    },
+    [reqImpl],
+  );
 
-  const refresh = (...params: TParams | []) => {
-    if (!currentCacheKey) {
-      console.error('[use-groot] error: cacheKey not found');
-      return;
-    }
-
-    fetcherManager.clearCache(currentCacheKey);
-    reqImpl(params.length ? (params as TParams) : undefined, true);
-  };
+  const refresh = useCallback(
+    (...params: TParams | []) => {
+      fetcherManager.clearCache(currentCacheKey);
+      reqImpl(params.length ? (params as TParams) : undefined, true);
+    },
+    [currentCacheKey, fetcherManager, reqImpl],
+  );
 
   useEffect(() => {
     if (!currentCacheKey) return;
@@ -132,7 +133,6 @@ export function useGroot<TData, TParams extends any[], TError = any>(
         if (options.errorCallback) {
           options.errorCallback(response.error!);
         }
-        // TODO: maybe error callback
       }
     };
 
