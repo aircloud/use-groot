@@ -1,5 +1,7 @@
 # use-groot
 
+[![use-groot](https://img.shields.io/npm/v/use-groot)](https://www.npmjs.com/package/use-groot)
+
 这是一个简单专注的 React Hooks 的请求管理库，目前已经生产环境可用。
 
 不过你在使用之前，也可以尝试了解 [swr](https://github.com/vercel/swr)、[use-request](https://ahooks.js.org/hooks/use-request/index) 或者 [react-query](https://react-query.tanstack.com/)。
