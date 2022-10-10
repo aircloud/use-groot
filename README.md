@@ -60,10 +60,10 @@ export interface GrootResponse<TData, TParams extends any[], TError> {
   error: TError | undefined;
   // 响应的状态，有 init、pending、success、error、refreshing 五种
   status: GrootStatus;
-  // 请求函数，如果有缓存会直接使用
-  req: (...params: TParams | []) => void;
+  // 请求函数，如果有缓存会直接使用，普通场景下可以无需关心返回值，通过 error 和 status 来处理业务逻辑
+  req: (...params: TParams | []) => Promise<boolean>;
   // 刷新函数，不使用缓存，并且会同时更新其他依赖此缓存的组件
-  refresh: (...params: TParams | []) => void;
+  refresh: (...params: TParams | []) => Promise<boolean>;
 }
 ```
 

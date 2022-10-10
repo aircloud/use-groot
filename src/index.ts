@@ -25,8 +25,8 @@ export interface GrootResponse<TData, TParams extends any[], TError> {
   data: TData | undefined;
   error: TError | undefined;
   status: GrootStatus;
-  req: (...params: TParams | []) => void;
-  refresh: (...params: TParams | []) => void;
+  req: (...params: TParams | []) => Promise<boolean>;
+  refresh: (...params: TParams | []) => Promise<boolean>;
 }
 
 const useRefState = <T>(initValue: T): [T, { current: T }, (value: T) => void] => {
@@ -70,7 +70,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
       updateCurrentParams(usingParams);
       setCurrentCacheKey(usingCacheKey);
 
-      fetcherManager.fetch(
+      return fetcherManager.fetch(
         usingCacheKey,
         options.fetcher,
         usingParams,
@@ -109,7 +109,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
   const refresh = useCallback(
     (...params: TParams | []) => {
       fetcherManager.clearCache(currentCacheKey);
-      reqImpl(params.length ? (params as TParams) : undefined, true);
+      return reqImpl(params.length ? (params as TParams) : undefined, true);
     },
     [currentCacheKey, fetcherManager, reqImpl],
   );

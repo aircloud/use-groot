@@ -17,10 +17,18 @@ export class GrootFetcherManager {
     fetcher: (...args: any) => Promise<any>,
     params: TParams | undefined,
     callback: (data: PromiseResult<TData, TError>) => void,
-  ) {
+  ): Promise<boolean> {
+    let singalResolve: (value: boolean | PromiseLike<boolean>) => void,
+      singalReject: (reason?: any) => void;
+
+    const fetchSingalPromise = new Promise<boolean>((rs, rj) => {
+      singalResolve = rs;
+      singalReject = rj;
+    });
+
     if (this.resultCacheLRU.cache.has(cacheKey)) {
       callback(this.resultCacheLRU.cache.get(cacheKey)!);
-      return;
+      return Promise.resolve(true);
     }
 
     if (this.promiseCache.has(cacheKey)) {
@@ -33,6 +41,7 @@ export class GrootFetcherManager {
           } as PromiseResult<TData, TError>;
           callback(res);
           this.invokeObserver(cacheKey, res);
+          singalResolve(true);
         })
         .catch((e) => {
           const res = {
@@ -41,8 +50,9 @@ export class GrootFetcherManager {
           } as PromiseResult<TData, TError>;
           callback(res);
           this.invokeObserver(cacheKey, res);
+          singalReject('cache internal error');
         });
-      return;
+      return fetchSingalPromise;
     }
 
     const promise = fetcher(...(params || []));
@@ -59,6 +69,7 @@ export class GrootFetcherManager {
         this.resultCacheLRU.cache.set(cacheKey, res);
         callback(res);
         this.invokeObserver(cacheKey, res);
+        singalResolve(true);
       })
       .catch((e) => {
         this.promiseCache.delete(cacheKey);
@@ -68,7 +79,10 @@ export class GrootFetcherManager {
         } as PromiseResult<TData, TError>;
         callback(res);
         this.invokeObserver(cacheKey, res);
+        singalReject('request internal error');
       });
+
+    return fetchSingalPromise;
   }
 
   clearCache = (cacheKey: string | null) => {

@@ -8,11 +8,16 @@ function App() {
     fetcher: fetcher,
     cacheKey: (params: string, key: string) => `cache_key_${params}`,
     auto: false,
+    swr: true,
   });
 
   useEffect(() => {
-    req('hello_world', 'key');
-    req();
+    req('hello_world', 'key').then((result) => {
+      console.info('req1 result:', result);
+    });
+    req().then((result) => {
+      console.info('req2 result:', result);
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -33,7 +38,9 @@ function App() {
         <button
           onClick={() => {
             console.log('click logo req!');
-            refresh();
+            refresh().then((result) => {
+              console.info('refresh result:', result);
+            });
           }}
           style={{ cursor: 'pointer' }}
         >
