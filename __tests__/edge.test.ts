@@ -36,8 +36,12 @@ describe('some edge cases', () => {
 
     expect(hook1.current.data).toBe(undefined);
 
-    hook1.current.req('hello_world');
-    hook2.current.req('hello_world');
+    hook1.current.req('hello_world').catch((e) => {
+      // do nothing
+    });
+    hook2.current.req('hello_world').catch((e) => {
+      // do nothing
+    });
 
     await act(() => sleep(200));
 

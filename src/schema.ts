@@ -16,11 +16,11 @@ export enum GrootStatus {
   'refreshing' = 'refreshing',
 }
 
-export interface GrootResponse<TData, TParams> {
-  status: GrootStatus;
-  data?: TData;
-  req: (params?: TParams) => {};
-}
 export interface GrootFetcherManagerOptions {
   cacheSize: number;
+}
+
+export interface GrootPromiseResponse<TData> {
+  data?: TData;
+  success: boolean;
 }

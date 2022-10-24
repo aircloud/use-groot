@@ -1,5 +1,10 @@
 import { CacheManager } from './cache';
-import { GrootFetcherManagerOptions, ObserverCallback, PromiseResult } from './schema';
+import {
+  GrootFetcherManagerOptions,
+  GrootPromiseResponse,
+  ObserverCallback,
+  PromiseResult,
+} from './schema';
 
 export class GrootFetcherManager {
   promiseCache = new Map<string, Promise<any>>();
@@ -17,18 +22,21 @@ export class GrootFetcherManager {
     fetcher: (...args: any) => Promise<any>,
     params: TParams | undefined,
     callback: (data: PromiseResult<TData, TError>) => void,
-  ): Promise<boolean> {
-    let singalResolve: (value: boolean | PromiseLike<boolean>) => void,
+  ): Promise<GrootPromiseResponse<TData>> {
+    let singalResolve: (value: GrootPromiseResponse<TData>) => void,
       singalReject: (reason?: any) => void;
 
-    const fetchSingalPromise = new Promise<boolean>((rs, rj) => {
+    const fetchSingalPromise = new Promise<GrootPromiseResponse<TData>>((rs, rj) => {
       singalResolve = rs;
       singalReject = rj;
     });
 
     if (this.resultCacheLRU.cache.has(cacheKey)) {
       callback(this.resultCacheLRU.cache.get(cacheKey)!);
-      return Promise.resolve(true);
+      return Promise.resolve({
+        success: true,
+        data: this.resultCacheLRU.cache.get(cacheKey)!,
+      });
     }
 
     if (this.promiseCache.has(cacheKey)) {
@@ -41,7 +49,10 @@ export class GrootFetcherManager {
           } as PromiseResult<TData, TError>;
           callback(res);
           this.invokeObserver(cacheKey, res);
-          singalResolve(true);
+          singalResolve({
+            success: true,
+            data: value as unknown as TData,
+          });
         })
         .catch((e) => {
           const res = {
@@ -69,7 +80,10 @@ export class GrootFetcherManager {
         this.resultCacheLRU.cache.set(cacheKey, res);
         callback(res);
         this.invokeObserver(cacheKey, res);
-        singalResolve(true);
+        singalResolve({
+          success: true,
+          data: data as unknown as TData,
+        });
       })
       .catch((e) => {
         this.promiseCache.delete(cacheKey);

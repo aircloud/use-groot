@@ -6,7 +6,7 @@ import {
   GlobalFetcherManager,
   GrootFetcherManager,
 } from './fetcher';
-import { Fetcher, GrootStatus, PromiseResult } from './schema';
+import { Fetcher, GrootPromiseResponse, GrootStatus, PromiseResult } from './schema';
 import stringify from 'json-stable-stringify';
 
 export { GrootStatus } from './schema';
@@ -25,8 +25,8 @@ export interface GrootResponse<TData, TParams extends any[], TError> {
   data: TData | undefined;
   error: TError | undefined;
   status: GrootStatus;
-  req: (...params: TParams | []) => Promise<boolean>;
-  refresh: (...params: TParams | []) => Promise<boolean>;
+  req: (...params: TParams | []) => Promise<GrootPromiseResponse<TData>>;
+  refresh: (...params: TParams | []) => Promise<GrootPromiseResponse<TData>>;
 }
 
 const useRefState = <T>(initValue: T): [T, { current: T }, (value: T) => void] => {
