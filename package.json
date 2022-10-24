@@ -1,6 +1,6 @@
 {
   "name": "use-groot",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "a react request hook",
   "main": "./lib/index.js",
   "scripts": {
