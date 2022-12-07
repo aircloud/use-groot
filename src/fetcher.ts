@@ -23,8 +23,8 @@ export class GrootFetcherManager {
     params: TParams | undefined,
     callback: (data: PromiseResult<TData, TError>) => void,
   ): Promise<GrootPromiseResponse<TData>> {
-    let singalResolve: (value: GrootPromiseResponse<TData>) => void,
-      singalReject: (reason?: any) => void;
+    let singalResolve: (value: GrootPromiseResponse<TData>) => void;
+    let singalReject: (reason?: any) => void;
 
     const fetchSingalPromise = new Promise<GrootPromiseResponse<TData>>((rs, rj) => {
       singalResolve = rs;
@@ -100,7 +100,9 @@ export class GrootFetcherManager {
   }
 
   clearCache = (cacheKey: string | null) => {
-    if (!cacheKey) return;
+    if (!cacheKey) {
+      return;
+    }
     this.resultCacheLRU.cache.delete(cacheKey);
   };
 
@@ -129,7 +131,9 @@ export class GrootFetcherManager {
   };
 
   invokeObserver = (cacheKey: string, result: PromiseResult<unknown, unknown>) => {
-    if (!this.observerMap.get(cacheKey)) return;
+    if (!this.observerMap.get(cacheKey)) {
+      return;
+    }
     const observerList = this.observerMap.get(cacheKey)!;
     for (const observer of observerList) {
       observer(result);
@@ -141,13 +145,13 @@ class FetcherCounter {
   counter = new Map<string, number>();
   begin = 0;
   increase = (uuid: string) => {
-    if (!this.counter.has(uuid)) {
-      this.counter.set(uuid, this.begin);
-      return this.begin;
-    } else {
+    if (this.counter.has(uuid)) {
       const newCount = 1 + this.counter.get(uuid)!;
       this.counter.set(uuid, newCount);
       return newCount;
+    } else {
+      this.counter.set(uuid, this.begin);
+      return this.begin;
     }
   };
 

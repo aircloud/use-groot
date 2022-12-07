@@ -51,17 +51,26 @@ export function useGroot<TData, TParams extends any[], TError = any>(
   const [_currentParams, currentParamsRef, updateCurrentParams] = useRefState(options.params);
   const [currentCacheKey, setCurrentCacheKey] = useState<string | null>(null);
 
+  const getCacheKey = useCallback(
+    (params?: TParams) => {
+      const usingParams = params || currentParamsRef.current || ([] as unknown[] as TParams);
+      const usingCacheKey =
+        'cacheKey' in options
+          ? typeof options.cacheKey === 'function'
+            ? options.cacheKey(...usingParams)
+            : (options.cacheKey as string)
+          : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${stringify(usingParams)}`;
+      return usingCacheKey;
+    },
+    [currentParamsRef, options],
+  );
+
   const reqImpl = useCallback(
     (params?: TParams, refresh?: boolean) => {
       const count = GlobalFetcherCounter.increase(uuid);
 
       const usingParams = params || currentParamsRef.current || ([] as unknown[] as TParams);
-      const usingCacheKey =
-        'cacheKey' in options
-          ? typeof options.cacheKey == 'function'
-            ? options.cacheKey(...usingParams)
-            : (options.cacheKey as string)
-          : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${stringify(usingParams)}`;
+      const usingCacheKey = getCacheKey();
 
       if (!options.swr) {
         updateData(undefined);
@@ -96,7 +105,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
         },
       );
     },
-    [currentParamsRef, fetcherManager, options, updateCurrentParams, updateData, uuid],
+    [currentParamsRef, fetcherManager, getCacheKey, options, updateCurrentParams, updateData, uuid],
   );
 
   const req = useCallback(
@@ -108,14 +117,17 @@ export function useGroot<TData, TParams extends any[], TError = any>(
 
   const refresh = useCallback(
     (...params: TParams | []) => {
-      fetcherManager.clearCache(currentCacheKey);
+      // 初次使用 refresh，此时 currentCacheKey 为空
+      fetcherManager.clearCache(currentCacheKey || getCacheKey());
       return reqImpl(params.length ? (params as TParams) : undefined, true);
     },
-    [currentCacheKey, fetcherManager, reqImpl],
+    [currentCacheKey, fetcherManager, getCacheKey, reqImpl],
   );
 
   useEffect(() => {
-    if (!currentCacheKey) return;
+    if (!currentCacheKey) {
+      return;
+    }
 
     const callback = (response: PromiseResult<TData, TError>) => {
       if (response.type === 'success') {
