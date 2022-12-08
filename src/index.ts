@@ -54,12 +54,26 @@ export function useGroot<TData, TParams extends any[], TError = any>(
   const getCacheKey = useCallback(
     (params?: TParams) => {
       const usingParams = params || currentParamsRef.current || ([] as unknown[] as TParams);
+
+      const getCacheKeyByDefaultFunction = () => {
+        return `${GlobalFetcherKeyManager.getId(options.fetcher)}_${stringify(usingParams)}`;
+      };
+
+      const getCacheKeyByCustomFunction = (fn: (...args: TParams) => string) => {
+        try {
+          return fn(...usingParams);
+        } catch (e) {
+          console.error('[use-groot] error, fallback to default cachekey:', e);
+          return getCacheKeyByDefaultFunction();
+        }
+      };
+
       const usingCacheKey =
         'cacheKey' in options
           ? typeof options.cacheKey === 'function'
-            ? options.cacheKey(...usingParams)
+            ? getCacheKeyByCustomFunction(options.cacheKey)
             : (options.cacheKey as string)
-          : `${GlobalFetcherKeyManager.getId(options.fetcher)}_${stringify(usingParams)}`;
+          : getCacheKeyByDefaultFunction();
       return usingCacheKey;
     },
     [currentParamsRef, options],
@@ -70,7 +84,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
       const count = GlobalFetcherCounter.increase(uuid);
 
       const usingParams = params || currentParamsRef.current || ([] as unknown[] as TParams);
-      const usingCacheKey = getCacheKey();
+      const usingCacheKey = getCacheKey(params);
 
       if (!options.swr) {
         updateData(undefined);
@@ -118,7 +132,7 @@ export function useGroot<TData, TParams extends any[], TError = any>(
   const refresh = useCallback(
     (...params: TParams | []) => {
       // 初次使用 refresh，此时 currentCacheKey 为空
-      fetcherManager.clearCache(currentCacheKey || getCacheKey());
+      fetcherManager.clearCache(currentCacheKey || getCacheKey(params as TParams));
       return reqImpl(params.length ? (params as TParams) : undefined, true);
     },
     [currentCacheKey, fetcherManager, getCacheKey, reqImpl],
