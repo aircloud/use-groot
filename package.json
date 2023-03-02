@@ -1,6 +1,6 @@
 {
   "name": "use-groot",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "a react request hook",
   "module": "./lib/index.js",
   "types": "./lib/index.d.ts",
