@@ -2,7 +2,8 @@
   "name": "use-groot",
   "version": "1.2.0",
   "description": "a react request hook",
-  "main": "./lib/index.js",
+  "module": "./lib/index.js",
+  "types": "./lib/index.d.ts",
   "scripts": {
     "test:watch": "vitest",
     "test": "vitest run",
@@ -27,6 +28,9 @@
     "type": "git",
     "url": "git+https://github.com/aircloud/use-groot.git"
   },
+  "files": [
+    "lib"
+  ],
   "keywords": [
     "react",
     "hooks",
